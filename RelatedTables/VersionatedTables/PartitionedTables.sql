@@ -63,15 +63,67 @@ CREATE TABLE Person(
 	name1 varchar(150),
 	surnname1 varchar(150),
 )
-ON  schemaPArtition(surnname1)
+ON  schemaPArtition(surnname1) ---Columna por la cual se quiere hacer la división de datos
 GO
 
 
+---Let's insert data through a query
 INSERT INTO Person(
 	numOrder,
 	numRegister,
 	name1,
 	surnname1
-)VALUES (
-			
 )
+VALUES(
+	'rga123',
+	2,
+	'Rodrigo',
+	'García'
+)
+---SELECT CustomerID, CustomerID,ContactName,City FROM Northwind.dbo.Customers
+
+
+---Check what partition is the data.
+
+SELECT surnname1, $partition.partitionFunction(surnname1) as partition
+FROM Person
+GO
+
+
+---TEMPORARY TABLES (TABLA VERSIONADA)
+/*
+	It allows registrer a historic of data changes
+
+*/
+CREATE TABLE Individuos(
+	registredNumber bigint identity(1,1) primary key,
+	nanme1 varchar(150),
+	nanme2 varchar(150),
+	lastname1 varchar(150),
+	lastname2 varchar(150),
+	---Date filed of type "datetime2" sirve para regirtar el tiempo de cambio en our data
+	SysStartTime datetime2 GENERATED ALWAYS AS  ROW  START NOT NULL,
+	SysEndTime datetime2 GENERATED  ALWAYS  AS ROW  END  NOT NULL,
+	PERIOD FOR  SYSTEM_TIME (SysStartTime, SysEndTime)
+)
+WITH (SYSTEM_VERSIONING=ON)
+
+
+INSERT INTO Individuos(
+	nanme1,
+	nanme2,
+	lastname1,
+	lastname2
+)VALUES(
+	'Rodrigo',
+	'Manuel',
+	'Gutierrez',
+	'García'
+)
+
+/*Check historic table */
+select * from [dbo].[MSSQL_TemporalHistoryFor_354100302]
+
+/*La tabla se ve afectada al detectar cambios solomente*/
+	---Cambiar por javier todos los nombres que sean Miguel
+Update Individuos SET nanme1='Javier' WHERE nanme1='Miguel'
