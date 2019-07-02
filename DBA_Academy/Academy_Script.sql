@@ -9,7 +9,7 @@ USE Academy;
 GO
 
 ------------------
---Countries Table-
+--COUNTRIES TABLE-
 ------------------
 
 /*
@@ -20,47 +20,43 @@ GO
 */
 
 CREATE TABLE Countries(
-	cod_country CHAR(2) NOT NULL,
-	Nam VARCHAR(30) NOT NULL,
-	Code_ISO3 CHAR(3) NOT NULL,
-	Code_tel SMALLINT	 
+	cod_country CHAR(2) PRIMARY KEY CHECK (LEN(cod_country)=2),
+	nam VARCHAR(30) NOT NULL,
+	code_ISO3 CHAR(3) NOT NULL UNIQUE CHECK (LEN(code_ISO3)=3),
+	node_tel SMALLINT	 
 )
 GO
 
---Adding restrictions to Countries Table
-ALTER TABLE Countries ADD PRIMARY KEY(cod_country);
-ALTER TABLE Countries ADD CONSTRAINT CK_Code_country CHECK(LEN(Code_ISO3)=3);
-ALTER TABLE Countries ADD CONSTRAINT CK_Code_ISO CHECK (LEN(Code_ISO3)=3);
-GO
 -----------------
---States Table---
+--STATES TABLE---
 -----------------
 CREATE TABLE States (
-	Code_St CHAR(2) NOT NULL,
-	Nam VARCHAR(50) NOT NULL,
-	cod_country CHAR(2) NOT NULL,
-	Code_Tel SMALLINT
+	code_St CHAR(2) PRIMARY KEY
+	--Let's create a restricton like a separated object and give it name "Len_State"
+	CONSTRAINT Len_State CHECK(LEN(code_St)=2),
+	nam VARCHAR(50) NOT NULL,
+	cod_country CHAR(2) FOREIGN KEY
+		REFERENCES Countries (cod_country)
+		ON UPDATE CASCADE
+		ON DELETE CASCADE,
+	code_Tel SMALLINT
 )
 GO
-
---Adding restriction to Countries Table
-ALTER TABLE States ADD PRIMARY KEY(Code_St);
-ALTER TABLE States ADD CONSTRAINT CK_Cod_state CHECK(LEN(Code_St)=2);
 /*
   Beacsue table already exists we can check that existing records
   comply with the rules imposed by the relationship.
   If there's a record which doesn't cumply with this foreign key then this FK can't
   be created.
-
-  (WITH)
-*/
-ALTER TABLE States WITH CHECK ADD FOREIGN KEY (cod_country) 
+  ALTER TABLE States WITH CHECK ADD FOREIGN KEY (cod_country) 
 	REFERENCES Countries (cod_country)
 	ON UPDATE CASCADE 
 	ON DELETE CASCADE;
 
+  (WITH)
+*/
+
 -----------------
---Academy Table--
+--ACADEMY TABLE--
 -----------------
 
 CREATE TABLE Academies (
@@ -70,8 +66,8 @@ CREATE TABLE Academies (
 	Num VARCHAR(10) NOT NULL,
 	Street VARCHAR(30) NOT NULL,
 	City VARCHAR(30) NOT NULL,
-	Sta CHAR(2) NOT NULL
-	--Adding constraint to Sta atribute
+	Sta CHAR(2) NULL
+	--Adding constraint to Sta atribute if we wish it
 		CONSTRAINT FK_state 
 		FOREIGN KEY 
 		REFERENCES States (Code_St)
@@ -80,3 +76,63 @@ CREATE TABLE Academies (
 	Zip VARCHAR(10) 
 )
 GO
+
+-------------------
+--PROFESSOR TABLE--
+-------------------
+CREATE TABLE Professors(
+	cod_Prof SMALLINT IDENTITY (1,1) PRIMARY KEY,
+	ssn VARCHAR(11) UNIQUE CHECK (LEN(ssn)=11),
+	nam VARCHAR(30) NOT NULL,
+	surname VARCHAR(30) NOT NULL,
+	num VARCHAR(10) NOT NULL,
+	street VARCHAR(30) NOT NULL,
+	city VARCHAR(30) NOT NULL,
+	sta CHAR(2) FOREIGN KEY REFERENCES States (code_St)
+		ON UPDATE CASCADE 
+		ON DELETE SET NULL,
+	zip VARCHAR(10) NOT NULL,
+	telphone VARCHAR(15),
+	income MONEY DEFAULT(0)
+)
+GO
+
+
+-------------------
+--APARTMENT TABLE--
+-------------------
+
+CREATE TABLE Apartments(
+	cod_Ap SMALLINT IDENTITY (1,1) PRIMARY KEY,
+	academy TINYINT NOT NULL
+			FOREIGN KEY REFERENCES Academies (code_Ac)
+			ON UPDATE CASCADE
+			ON DELETE CASCADE,
+	nam VARCHAR(30) NOT NULL,
+	director SMALLINT NOT NULL DEFAULT (-1)
+			 FOREIGN KEY REFERENCES Professors (cod_Prof)
+			 ON UPDATE  NO ACTION --not taking any action when record had been deleted
+			 ON DELETE  NO ACTION,
+	date_start DATE NOT NULL
+)
+GO
+--------------------------
+--APART_PROFESSORS TABLE--
+--------------------------
+
+CREATE TABLE Aparts_Professors(
+	cod_Apt SMALLINT NOT NULL FOREIGN KEY REFERENCES Apartments (cod_Ap),			
+	cod_Prof SMALLINT NOT NULL FOREIGN KEY REFERENCES Professors(cod_Prof)
+		ON UPDATE CASCADE
+		ON DELETE CASCADE
+)
+GO
+
+/*
+	TRIGGERS - DML (Lenguage of manipulation of data)
+	Objects in a Data base that are executed automatically 
+	when it inserting, modifying or deleting data from a table or view.
+*/
+
+
+
