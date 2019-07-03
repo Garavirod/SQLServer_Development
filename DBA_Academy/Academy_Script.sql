@@ -1,5 +1,5 @@
 -------------------------
---Creation of database---
+--CREATION OF DATABASE---
 -------------------------
 CREATE DATABASE Academy;
 GO
@@ -134,5 +134,113 @@ GO
 	when it inserting, modifying or deleting data from a table or view.
 */
 
+--------------------
+--DELETING TRIGGER--
+--------------------
+
+CREATE TRIGGER Tgr_delete_Apt_Professors
+	ON Apartments
+	FOR DELETE --Deleting of apartments
+AS BEGIN
+	DELETE Aparts_Professors
+	/*
+		Select all cod_apt from DELETED TABLE and deleting from relation 
+		Aparts_Professors.
+	*/
+	WHERE cod_Apt IN (
+		SELECT cod_Apt FROM deleted
+	);
+END
+GO
+---------------------
+--TRIGGER MODIFYING--
+---------------------
+
+--Modyfing of primary key from apartments Table
+CREATE TRIGGER Tgr_modify_Apt_Professors
+	ON Apartments
+	FOR UPDATE --Apartments modyfing
+AS BEGIN
+	UPDATE Aparts_Professors
+	SET cod_Apt = A.new_code --Updating of the new code IN Aparts_Professors Table
+	FROM (
+		SELECT D.cod_Ap AS before_code,
+			   I.cod_Ap AS new_code
+		FROM DELETED AS D --Data before of modify
+			 JOIN
+			 INSERTED AS I --Data after of modify
+			 ON
+			 D.cod_Ap = I.cod_Ap --Same apartment
+		WHERE D.cod_Ap <> I.cod_Ap --cod_Ap is modificated
+	)A
+	WHERE cod_Apt = A.before_code --rows which has the before code of each apartment
+END
+GO
+
+--------------------
+--TABLE SUBJECT V1--
+--------------------
+CREATE TABLE Subjects(
+	cod_subject SMALLINT IDENTITY (1,1) PRIMARY KEY,
+	nam VARCHAR(30) NOT NULL,
+	elective BIT NOT NULL DEFAULT (0),
+	weigh TINYINT CHECK (weigh > 0 AND 
+						 weigh <= ( 
+							 CASE elective
+								WHEN 0 THEN 6
+								ELSE 2
+							 END
+						 )
+	)
+	-- Using the field of same register in the restriction of other field is not allowed
+)
+GO
+
+--------------------
+--TABLE SUBJECT V2--
+--------------------
+CREATE TABLE Subjects(
+	cod_subject SMALLINT IDENTITY (1,1) PRIMARY KEY,
+	nam VARCHAR(30) NOT NULL,
+	elective BIT NOT NULL DEFAULT (0),
+	weigh TINYINT NOT NULL DEFAULT(1) CHECK(weigh>0)
+)
+
+/*
+	We are going to create a restriction, but at the table level not in the weight field
+*/
+
+--Now we can use all field of record
+ALTER TABLE Subjects
+	  ADD CONSTRAINT Check_weight_subject
+	  CHECK ( weigh <= (CASE elective WHEN 0 THEN 6 ELSE 2 END))
 
 
+
+-----------------
+--COURSES TABLE--
+-----------------
+
+CREATE TABLE Courses(
+	cod_course INT IDENTITY (1,1) PRIMARY KEY,
+	cod_prof SMALLINT
+	FOREIGN KEY REFERENCES Professors (cod_Prof)
+	ON DELETE SET NULL,
+	cod_sub SMALLINT 
+	FOREIGN KEY REFERENCES Subjects (cod_subject)
+	ON DELETE CASCADE,
+	classroom INT NOT NULL,
+	hour_start TIME NOT NULL,
+	hour_end TIME NOT NULL,
+	--It just stores the metadata and the operation going to happens when be necessary
+	diration_mins AS (DATEDIFF(MINUTE,hour_start,hour_end)) --Type of data it isn't necessary
+)
+GO
+
+--Createing a restriction  to level of table 
+ALTER TABLE Courses
+ADD CONSTRAINT CheckHours CHECK(hour_start < hour_end);
+
+--Adding new field to table 
+ALTER TABLE Courses 
+ADD isActive BIT NOT NULL DEFAULT(1);
