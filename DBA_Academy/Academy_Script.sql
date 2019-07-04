@@ -1,6 +1,6 @@
--------------------------
---CREATION OF DATABASE---
--------------------------
+---------------------
+--DATABASE CREATION--
+---------------------
 CREATE DATABASE Academy;
 GO
 
@@ -244,3 +244,70 @@ ADD CONSTRAINT CheckHours CHECK(hour_start < hour_end);
 --Adding new field to table 
 ALTER TABLE Courses 
 ADD isActive BIT NOT NULL DEFAULT(1);
+
+-------------
+--FUNCTIONS--
+-------------
+/*
+	Data of record what we are trying to insert
+	@ID INT,
+	@classroom INT,
+	@start TIME, 
+	@end TIME
+
+*/
+CREATE FUNCTION isClassRoomOccupied(@ID INT,@classroom INT,@start TIME, @end TIME)
+
+RETURNS BIT --Type of function's return
+AS BEGIN 
+	DECLARE @isOccupied BIT = 0;
+	IF EXISTS (
+		SELECT * FROM Courses --Courses which meet following conditions
+		WHERE 
+		cod_course <> @ID AND  --It is not the course we're trying of insert
+		classroom = @classroom AND --The course is in the same clasroom
+		isActive = 1 AND --It is an active course
+		(
+			@start BETWEEN hour_start AND hour_end OR --A course takes place at the same moment while this course is starting
+			@end BETWEEN hour_start AND hour_end OR --A course take place at the same mometn while this course is enindg
+			(@start <= hour_start AND @end >= hour_end) --A course takes place at the same moment while this course is taking place
+		)	
+	)
+	SET @isOccupied = 1 --If all those conditions are met then the classroom is occupied
+	RETURN @isOccupied
+END
+GO
+
+/*Only it can create courses if the clasroom is aveliable*/
+ALTER TABLE Courses
+ADD CONSTRAINT checkIsOccupied
+CHECK (dbo.isClassRoomOccupied(cod_course,classroom,hour_start,hour_end)=0)
+GO
+----------------
+--BOOKS TABLES--
+----------------
+CREATE TABLE  Books(
+	cod_book INT IDENTITY (1,1) PRIMARY KEY,
+	isbn CHAR(13) NOT NULL UNIQUE CHECK (LEN(isbn)=13 AND ISNUMERIC(isbn)=1),
+	title VARCHAR(100) NOT NULL,
+	author VARCHAR(10) NOT NULL,
+	_year SMALLINT,
+	edition CHAR(3),
+	editorial VARCHAR(100),
+	pages SMALLINT
+)
+GO
+-----------------------
+--COURSES_BOOKS TABLE--
+-----------------------
+CREATE TABLE Courses_Books (
+	cod_course INT NOT NULL
+	FOREIGN KEY REFERENCES Courses (cod_course)
+	ON DELETE CASCADE 
+	ON UPDATE CASCADE,
+	cod_book INT NOT NULL
+	FOREIGN KEY REFERENCES Books (cod_book)
+	ON DELETE CASCADE 
+	ON UPDATE CASCADE
+)
+GO
