@@ -1,3 +1,8 @@
+/*
+	Implementation of Logic model of Academy
+	Phisic Model.
+*/
+
 ---------------------
 --DATABASE CREATION--
 ---------------------
@@ -310,4 +315,47 @@ CREATE TABLE Courses_Books (
 	ON DELETE CASCADE 
 	ON UPDATE CASCADE
 )
+GO
+------------------
+--STUDENTS TABLE--
+------------------
+
+CREATE TABLE Students (
+	cod_std INT IDENTITY (1,1) PRIMARY KEY,
+	ssn VARCHAR(11) UNIQUE CHECK (LEN(ssn)=11),
+	nam VARCHAR(30) NOT NULL,
+	surname VARCHAR(30) NOT NULL,
+	number VARCHAR(10) NOT NULL,
+	street VARCHAR(30) NOT NULL,
+	city VARCHAR(30) NOT NULL,
+	_state CHAR(2) FOREIGN KEY REFERENCES States (code_St)
+		   ON UPDATE CASCADE
+		   ON DELETE SET NULL,
+	zip_Code VARCHAR(10) NOT NULL,
+	telephone VARCHAR(15),
+	birthdate DATE,
+	place_birth VARCHAR(50)
+)
+GO
+
+--------------------------
+--COURSES_STUDENTS TABLE--
+--------------------------
+
+CREATE TABLE Courses_Students(
+	cod_std INT NOT NULL
+	FOREIGN KEY REFERENCES Students (cod_std)
+	ON UPDATE CASCADE
+	ON DELETE CASCADE,
+	cod_course INT NOT NULL
+	FOREIGN KEY REFERENCES Courses (cod_course)
+	ON UPDATE CASCADE
+	ON DELETE CASCADE,
+	note TINYINT NOT NULL DEFAULT (0),
+	ins_date DATE NOT NULL,
+	assistance TINYINT NOT NULL DEFAULT (0)
+)
+GO
+
+ALTER TABLE Courses_Students ADD PRIMARY KEY (cod_std,cod_course)
 GO
