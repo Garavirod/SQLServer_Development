@@ -51,4 +51,63 @@ INSERT INTO Countries(cod_country,nam,code_ISO3,node_tel)
 --But this TABLE acpts null data
 INSERT INTO Countries(cod_country,nam,code_ISO3)
 			   VALUES('CR','Costa Rica','CRA')
-			   GO			  
+			   GO
+
+--Countries oredered by name
+SELECT * FROM Countries	ORDER BY nam DESC
+GO
+
+--The ordered field does not have to be between the selected fields
+SELECT nam, code_ISO3 FROM Countries ORDER BY code_ISO3 DESC
+GO
+
+--Atomicity (all or notthng) with error
+BEGIN TRY
+	BEGIN TRAN
+		INSERT INTO Countries (cod_country,nam,code_ISO3) VALUES('SV','El Salvador','SLV')
+		INSERT INTO Countries (cod_country,nam,code_ISO3) VALUES('FI','Finlandia','FIN')
+		INSERT INTO Countries (cod_country,nam,code_ISO3) VALUES('FR','Francia','FRA')
+		INSERT INTO Countries (cod_country,nam,code_ISO3) VALUES('DE','Alemania','DEU')
+		INSERT INTO Countries (cod_country,nam,code_ISO3) VALUES('GT','Guatemala','GTH')
+		INSERT INTO Countries (cod_country,nam,code_ISO3) VALUES('HN','Honduras','HND')
+		INSERT INTO Countries (cod_country,nam,code_ISO3) VALUES('HN','Hungria','HUN') --Duplicated Key
+		COMMIT
+		PRINT 'Successful transaction !!'
+END TRY
+BEGIN CATCH
+	ROLLBACK --State of database returns back at its original state
+	PRINT 'Faild transaction !!'
+END CATCH
+GO
+
+-- Atomicity (all or notthng) without error
+BEGIN TRY
+	BEGIN TRAN
+		INSERT INTO Countries (cod_country,nam,code_ISO3) VALUES('SV','El Salvador','SLV')
+		INSERT INTO Countries (cod_country,nam,code_ISO3) VALUES('FI','Finlandia','FIN')
+		INSERT INTO Countries (cod_country,nam,code_ISO3) VALUES('FR','Francia','FRA')
+		INSERT INTO Countries (cod_country,nam,code_ISO3) VALUES('DE','Alemania','DEU')
+		INSERT INTO Countries (cod_country,nam,code_ISO3) VALUES('GT','Guatemala','GTH')
+		INSERT INTO Countries (cod_country,nam,code_ISO3) VALUES('HN','Honduras','HND')
+		INSERT INTO Countries (cod_country,nam,code_ISO3) VALUES('HU','Hungria','HUN') --Duplicated Key
+		COMMIT
+		PRINT 'Successful transaction !!'
+END TRY
+BEGIN CATCH
+	ROLLBACK --State of database returns back at its original state
+	PRINT 'Faild transaction !!'
+END CATCH
+GO
+
+--INSERTING DATA IN STATES--
+INSERT INTO States (code_St,cod_country,nam) VALUES('UL','DE','Baden-Wötenberg')
+GO
+
+--Code_country there's not exist 'GB' and faild the inserting of foreign key
+INSERT INTO States (code_St,cod_country,nam) VALUES('SW','GB','South West England')
+GO
+
+--So
+
+INSERT INTO Countries (cod_country,nam,code_ISO3,node_tel) VALUES('GB','Gran Bretaña','BRN',89)
+GO
