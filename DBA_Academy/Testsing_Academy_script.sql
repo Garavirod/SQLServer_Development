@@ -239,3 +239,165 @@ GO
 --It's very import return back normal behavor
 SET IDENTITY_INSERT Academies OFF
 GO
+
+/*
+	STORED PROCEDURES
+
+	Group of one of more of SQL queries that are stred like an object
+	in DBD's meta data.
+	They are an object more of DBD
+	SP allways returns an integer
+
+	Sintaxis:
+
+	CREATE PROCEDURE name_sp
+		@param_name char(2)
+	AS
+	BEGIN
+		SELECT * FROM States WHERE cd_countryi = @param_name;
+	END
+*/
+
+
+CREATE PROCEDURE InserCountries
+	@cod_country char(2),
+	@Nam varchar(50),
+	@cod_ISO3 char(3),
+	@cod_tel smallint  = NULL --If it is not inserted a data, the value will be NULL
+AS
+BEGIN
+	INSERT INTO Countries(cod_country,nam,code_ISO3,node_tel)
+	VALUES(@cod_country,@Nam,@cod_ISO3,@cod_tel);
+END
+GO
+
+--Executing an stored procedure
+EXEC InserCountries
+	@cod_country = 'TWN', --Implict convertion
+	@Nam = 'Taiwan',
+	@cod_ISO3 = 'TWN'
+
+--ERROR  2627 --> PRIMARY KEY, UNIQUE
+
+
+/*ALTER PROCEDURE */
+
+ALTER PROCEDURE InserCountries
+	@cod_country char(2),
+	@Nam varchar(50),
+	@cod_ISO3 char(3),
+	@cod_tel smallint  = NULL --If it is not inserted a data, the value will be NULL
+AS
+BEGIN
+	DECLARE @Msg NVARCHAR(4000), @Err INT
+	BEGIN TRY
+		INSERT INTO Countries(cod_country,nam,code_ISO3,node_tel)
+		VALUES(@cod_country,@Nam,@cod_ISO3,@cod_tel);
+	END TRY
+	BEGIN CATCH
+		SET @Err = @@ERROR
+		IF @Err = 547
+			SET @Msg = 'DATA INSERTED IS WRONG'
+		ELSE IF @Err = 2627
+			SET @Msg = 'COUNTRY ALREADY EXIST'
+		ELSE
+			SET @Msg = ERROR_MESSAGE()
+
+		--THROW 51000, @MSG, 1
+		PRINT @Msg
+		RETURN -1
+	END CATCH
+	RETURN 0 --When the SP is sccesfully executed
+END
+GO
+
+/*ANOTHER FORM TO DO THE THINGS*/
+
+CREATE PROCEDURE InsertStates
+	@cod_sta char(2),
+	@cod_cont char(2),
+	@name varchar(50),
+	@cod_tel smallint = NULL
+AS
+BEGIN
+	INSERT INTO States (code_St,cod_country,nam,code_Tel)
+	VALUES (@cod_sta,@cod_cont,@name,@cod_tel)
+END
+GO
+/*DELETE A PROCEDURE*/
+DROP PROCEDURE ModifyStates
+GO
+
+/*STORED PROCEDURE FOR MODIFYING AN STATE*/
+CREATE PROCEDURE ModifyStates
+	@cod_sta char(2),
+	@cod_cont char(2),
+	@name varchar(50),
+	@cod_tel smallint = NULL
+AS
+BEGIN
+	UPDATE States
+		   SET cod_country = @cod_cont,		   
+		   nam = @name,
+		   code_Tel = @cod_tel
+	WHERE code_St = @cod_sta
+END
+GO
+
+/*STROEE PROCEDURE FOR DELETING STATES*/
+CREATE PROCEDURE Delete_States
+	@cod_state char(2)
+AS
+BEGIN 
+	DELETE States
+	WHERE code_St = @cod_state
+END
+GO
+
+/*STORED PROCEDURE FOR QUERYING STATES*/
+CREATE PROCEDURE Query_States
+	@cod_country char(2) = NULL,
+	@cod_sta char(2) = NULL
+AS
+BEGIN
+	SELECT P.cod_country, P.nam AS COUNTRY,
+		   E.code_St,E.nam,E.code_Tel
+	FROM States AS E
+		JOIN Countries AS P ON P.cod_country = E.cod_country
+	WHERE (@cod_country IS NULL OR P.cod_country = @cod_sta) AND
+		  (@cod_sta IS NULL OR E.code_St = @cod_sta)
+END
+GO
+
+
+/*EXECUTIONG THE STROED PROCEDURES*/
+EXEC InsertStates 'BA','TW','BASIN'
+EXEC Query_States @cod_country = 'TW'
+EXEC Query_States @cod_sta = 'BA'
+EXEC Query_States
+EXEC Delete_States 'BA'
+
+
+--Adding more countries
+INSERT INTO Countries (cod_country,code_ISO3,nam,node_tel)
+VALUES
+('ES','ESP','ESPAÑA',34),
+('PL','PLN','POLINIA',48),
+('ME','MEX','MEXICO',52),
+('RU','RUS','RUSIA',7),
+('IT','ITA','ITAILA',39)
+GO
+
+--Adding more states
+
+INSERT INTO States (code_St,cod_country,nam,code_Tel)
+VALUES
+('CT','ES','CATALUÑA',NULL),
+('MA','ES','MADRID',NULL),
+('SO','PL','SCHOCZEW',NULL),
+('WA','PL','WARSAW',NULL),
+('DU','ME','DURANGO',NULL),
+('UM','RU','MONTES URIELS',NULL),
+('BD','IT','BOLOÑAN',NULL),
+('AU','FR','AVAGUANE',NULL)
+GO
